@@ -1,4 +1,4 @@
-
+import "dotenv/config";
 
 function getEnvVariable(key: string): string {
     const value = process.env[key];

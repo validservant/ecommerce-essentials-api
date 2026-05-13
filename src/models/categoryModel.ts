@@ -4,17 +4,18 @@ import type {
     InferCreationAttributes,
     CreationOptional
 } from "sequelize";
-import {sequelize} from "../config/database.ts";
-export class category extends Model <
-    InferAttributes<category>,
-    InferCreationAttributes<category>
+import sequelize from "../config/database.ts";
+
+export default class Category extends Model <
+    InferAttributes<Category>,
+    InferCreationAttributes<Category>
     >{
         declare id: CreationOptional<number>;
         declare name:string;
         declare slug: string;
         declare description:string;
     }
-    category.init({
+    Category.init({
         id:{
             type:DataTypes.INTEGER,
             primaryKey: true,

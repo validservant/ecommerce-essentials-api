@@ -1,25 +1,21 @@
 import { Model, DataTypes } from "sequelize";
-import type{
-    InferAttributes,
-    InferCreationAttributes,
-    CreationOptional
-} from "sequelize"
+import type{InferAttributes, InferCreationAttributes, CreationOptional, ForeignKey } from "sequelize"
 
-import {sequelize} from "../config/database.ts";
+import sequelize from "../config/database.ts";
 
-export class product extends Model < 
-    InferAttributes<product>,
-    InferCreationAttributes<product>>{
+export default class Product extends Model < 
+    InferAttributes<Product>,
+    InferCreationAttributes<Product>>{
         declare id: CreationOptional<number>;
         declare slug: string;
         declare title: string;
-        declare description: string;
+        declare descriptions: string;
         declare image: string;
         declare price: number;
         declare stockQuantity: number;
-        declare categoryId: number;
+        declare categoryId: ForeignKey<number>;
     }
-    product.init({
+    Product.init({
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -33,7 +29,7 @@ export class product extends Model <
             type: DataTypes.STRING,
             allowNull:false,
         },
-        description:{
+        descriptions:{
             type:DataTypes.STRING,
         },
         image:{
@@ -46,6 +42,7 @@ export class product extends Model <
         },
         stockQuantity:{
             type:DataTypes.INTEGER,
+            allowNull:false
 
         },
         categoryId:{

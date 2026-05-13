@@ -3,23 +3,23 @@ import type{
     InferAttributes,
     InferCreationAttributes,
     CreationOptional } from "sequelize";
-    import {sequelize} from "../config/database.ts";
+    import sequelize from "../config/database.ts";
 
-    export class user extends Model<
-        InferAttributes<user>,
-        InferCreationAttributes<user>
+    export class User extends Model<
+        InferAttributes<User>,
+        InferCreationAttributes<User>
     >{
         declare id: CreationOptional<number>;
         declare token: string;
-        declare userName: string;
+        declare username: string;
     }
-    user.init({
+    User.init({
         id: {
             type: DataTypes.INTEGER, 
             autoIncrement: true,
             primaryKey: true,
         },
-        userName:{
+        username:{
            type: DataTypes.STRING,
             allowNull:false,
             unique: true,

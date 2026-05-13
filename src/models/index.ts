@@ -1,17 +1,16 @@
-import {user} from "./userModel.ts";
-import { product } from "./productModel.ts";
-import { category } from "./categoryModel.ts";
+//import {User} from "./userModel.ts";
+import Product from "./productModel.ts";
+import  Category from "./categoryModel.ts";
 
 
 // category > prooduct (1 to many)
-category.hasMany(product,{
-    foreignKey:"categoryId",
-    as:"product",
-});
+ Product.belongsTo(Category,{
+        foreignKey:'categoryId',
+        as:"Category"
+      });
+Category.hasMany(Product, {
+        foreignKey:"categoryId",
+        as: "Product"
+      });
 
-product.belongsTo(category,{
-    foreignKey:"categoryId",
-    as:"category",
-});
-
-export { user, product,category };
+//export {  Product,Category };
