@@ -4,7 +4,7 @@ import Category from "../models/categoryModel.ts";
 import {Op}from "sequelize";
 import { stringify } from "node:querystring";
 
-//TASK 1(ONE) week 6
+//TASK 1(ONE) week 5 Create Product - Admin only - authentication stub).
 const generateSlug = (title: string) => {
   return title.toLowerCase().replace(/\s+/g, "-");
 };
@@ -13,11 +13,15 @@ const generateSlug = (title: string) => {
 export const createProduct = async (req:Request, res:Response) => {
 
   try{
+    const Admin:boolean = true;
+    if(!Admin){
+      res.status(403).json({msg:"user must be admin to create product"});
+    }
     const { title, descriptions, image, price, stockQuantity, categoryId } = req.body;
 
     const slug = generateSlug(title);
     const prodCart = await Category.findByPk(categoryId);
-  
+      
     if(!prodCart){
       return res.status(404).json({msg:"Category not found"});
     }
@@ -30,7 +34,7 @@ export const createProduct = async (req:Request, res:Response) => {
   }
 };
 
-//get the product (List Products - with query parameters for categoryId, search, limit, offset).
+// Task 1.1 week 5. get the product (List Products - with query parameters for categoryId, search, limit, offset).
 export const getProduct = async (req:Request, res:Response) =>{
     const {categoryId, search, limit,offset} = req.query;
 
@@ -66,7 +70,6 @@ export const getProduct = async (req:Request, res:Response) =>{
 
         offset: offset?Number(offset):0,
 
-       // order:[['createdAt','DESC']],
     });
     res.status(200).json({
       success:true,
@@ -76,7 +79,7 @@ export const getProduct = async (req:Request, res:Response) =>{
 };
 
 
-//GET /api/products/:slug
+//Task 1.2 week 5, GET /api/products/:slug
 
 export const getProductBySlug = async (req:Request, res:Response) =>{
   const {slug} = req.params;
@@ -92,8 +95,7 @@ export const getProductBySlug = async (req:Request, res:Response) =>{
     res.json(getProdBySlug);
 }
 
-//TASK (2) two  week 6
-//implementing pagination logic
+//TASK (2) two  week 5, implementing pagination logic
 
 export const getProducts = async(req:Request, res: Response) =>{
   const {categoryId,search,page,limit} = req.query;
