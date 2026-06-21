@@ -1,145 +1,111 @@
 import type { Request, Response } from "express";
-import Product from "../models/productModel.ts";
-import Category from "../models/categoryModel.ts";
-import {Op}from "sequelize";
-import { stringify } from "node:querystring";
+import { createProductService, getProductService, getProductServicesBySlug, getProductByQueriesService, updateProductServiceBySlug, deleteProductBySlugService } from "../services/productService.ts";
+import type {productCreateInput} from "../schemas/productSchema.ts";
+import { queryObjects } from "node:v8";
+import { getProductBySlugToDeleteRepo } from "../repositories/productRepository.ts";
 
 //TASK 1(ONE) week 5 Create Product - Admin only - authentication stub).
-const generateSlug = (title: string) => {
-  return title.toLowerCase().replace(/\s+/g, "-");
-};
 
 
-export const createProduct = async (req:Request, res:Response) => {
+export const createProduct = async (req:Request<{}, {}, productCreateInput>, res:Response) => {
 
   try{
     const Admin:boolean = true;
     if(!Admin){
-      res.status(403).json({msg:"user must be admin to create product"});
+      return res.status(403).json({msg:"user must be admin to create product"});
     }
-    const { title, descriptions, image, price, stockQuantity, categoryId } = req.body;
-
-    const slug = generateSlug(title);
-    const prodCart = await Category.findByPk(categoryId);
-      
-    if(!prodCart){
-      return res.status(404).json({msg:"Category not found"});
-    }
-
-    const creatProd = await Product.create({ slug, title,descriptions,image,price,stockQuantity,categoryId});
+    
+    const creatProd = await createProductService(req.body);
     console.log(creatProd);
-     res.json(creatProd);    
+     return res.status(201).json(creatProd); 
+
   }catch(error: any) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
+
 // Task 1.1 week 5. get the product (List Products - with query parameters for categoryId, search, limit, offset).
 export const getProduct = async (req:Request, res:Response) =>{
-    const {categoryId, search, limit,offset} = req.query;
 
-    const whereCondition :any = {};
-
-    //search by categoryId
-    if(categoryId){
-      whereCondition.categoryId = categoryId;
-    }
-
-    // search by title
-    if(search){
-      whereCondition.title = {
-        [Op.iLike]:`%${search}%`,
-      };
-    }
-
-    const products = await Product.findAndCountAll({
-        where: whereCondition,
-        include:[{
-          model: Category,
-          as: "Category",
-          attributes:{
-            include:['id','name'],
-             exclude: ["createdAt", "updatedAt"],
-          }
-        }],
-        attributes:{
-           exclude: ["createdAt", "updatedAt"],
-        },
-
-        limit: limit?Number(limit):2,
-
-        offset: offset?Number(offset):0,
-
-    });
-    res.status(200).json({
+  try{
+    const products = await getProductService(req.query)
+    return res.status(200).json({
       success:true,
       total: products.count,
       products: products.rows,
     });
+    }catch(error:any){
+      return res.status(500).json({
+        message: error.message,
+      });
+
+    }
 };
 
 
 //Task 1.2 week 5, GET /api/products/:slug
 
 export const getProductBySlug = async (req:Request, res:Response) =>{
-  const {slug} = req.params;
-  const getProdBySlug = await Product.findOne({
-    where:{ slug },
-    include:[{
-      model:Category,
-      as: 'Category'
-    }]
-  });
-  if (!getProdBySlug){ return res.status(404).json({msg:"Product not found"})};
-    console.log(getProdBySlug);
-    res.json(getProdBySlug);
+
+     const product = await getProductServicesBySlug(req.params);
+
+    res.status(200).json(product);
 }
+
 
 //TASK (2) two  week 5, implementing pagination logic
 
 export const getProducts = async(req:Request, res: Response) =>{
-  const {categoryId,search,page,limit} = req.query;
-
-  const pageNumber = Number(page);
-  const limitNumber = Number(limit);
-
-  //number of skip
-
-  const offset = (pageNumber - 1) * limitNumber;
-
-  //whereClause
-  const whereClause: any = {};
   
-  //filter by category
-  if(categoryId){
-    whereClause.categoryId = categoryId;
-  };
-
-  //filter by search
-  if(search){
-    whereClause.search ={ 
-      [Op.iLike] : `%${search}%}`,
-     }
-  };
   //fetching the product
-  const getProds = await Product.findAndCountAll({
-    where: whereClause,
-    include:[{
-      model: Category,
-      as:"Category",
-      attributes:['id', 'name'],
-    }],
-    limit: limitNumber,
-    offset,
-  });
+  const product = await getProductByQueriesService(req.query);
   
-  res.status(200).json({
-    totalProduct: getProds.count,
-    totalPages: Math.ceil(getProds.count/limitNumber),
-    currentPage: pageNumber,
-    product: getProds.rows,
-  });
+  res.status(200).json(product);
 
 };
 
-export default { createProduct, getProduct, getProductBySlug,getProducts};
+
+// Task 1 one week 6, PUT /api/products/:slug (Update Product - Admin only).
+
+export const updateProducts = async (req:Request<{slug:string}>, res:Response) => {
+  const Admin: boolean = true;
+  if(!Admin){
+    return res.status(403).json({msg: " You must be an admin to update a product"})
+  };
+    const {slug} = req.params;
+    const product = await updateProductServiceBySlug(slug, req.body);
+  
+    console.log(product);
+    return res.status(200).json({
+      msg:"created success",
+      product:product
+    });
+  
+};
+
+// Task 2 one week 6 DELETE /api/products/:slug
+
+  export const deleteProdBySlug = async (req:Request<{slug:string}>, res:Response ) => {
+    
+    try{
+          const Admin = true;
+          if (!Admin){
+              return res.status(403).json({msg: " You must be an admin to delete a product"});
+          };
+          const {slug} = req.params;
+          const deletedProduct = await getProductBySlugToDeleteRepo(slug)
+          const product =  await deleteProductBySlugService(slug);
+
+          console.log(deletedProduct);
+
+          return res.status(200).json({
+            msg:"product deleted successfully",
+            products:deletedProduct,
+          })
+    }catch(err:any){
+      return res.status(500).json({msg:err.message});
+    }
+    
+  };
+//export default { createProduct, getProduct, getProductBySlug,getProducts, updateProducts, deleteProdBySlug};

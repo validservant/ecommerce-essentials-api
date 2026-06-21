@@ -1,31 +1,22 @@
 import type { Request, Response } from "express";
-import Category from "../models/categoryModel.ts"
+import Category from "../models/categoryModel.ts";
+import type { categoryCreateInput } from "../schemas/categorySchema.ts";
+import { createCategoryService, getAllProductCategoriesService, getCategoriesBySlugService,updateCategoriesByslugService, deleteCategoryBySlugService} from "../services/categoryService.ts";
+import {getCategoryToDeleteBySlugRepo} from "../repositories/categoryRepository.ts"
+//  function to generate slug
 
 
-//  function to select slug
-const generateSlug = (name: string) => {
-  return name.toLowerCase().replace(/\s+/g, "-");
-};
 
-/*enum UsersRole{
-  Admin =  0,
-  user = 1
-}*/
-
-//  POST /api/categories (Create Category - Admin only - basic authentication stub for now).
-export const createCategory = async (req: Request, res: Response) => {
+// POST /api/categories (Create Category - Admin only - basic authentication stub for now).
+export const createCategory = async (req: Request<{},{},categoryCreateInput>, res: Response) => {
   try {
     //Basic admin check (stub)
-    const isAdmin = true;
 
+    const isAdmin = true;
     if (!isAdmin) {
       return res.status(403).json({ message: "user must be admin to create" });
     }
-    const { name, description } = req.body;
-    if (!name) { return res.status(400).json({ message: "Name is required" }); }
-    
-    const slug = generateSlug(name);
-    const category = await Category.create({ name, slug, description});
+    const category = await createCategoryService( req.body);
     console.log(category);
     res.status(201).json(category);
   } 
@@ -38,33 +29,27 @@ export const createCategory = async (req: Request, res: Response) => {
 // List All Categories
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const categories = await Category.findAll();
+    const categories = await getAllProductCategoriesService();
     res.json(categories);
-
+    console.log(categories);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }
 };
 
 // get categories for product
-export const getCategoryByone = async () =>{
+export const getCategoryByone = async (req:Request, res:Response) =>{
    const getCategoriesById =  await Category.findOne({
      where:{ id:4 }
    });
-   return getCategoriesById;
+   res.status(200).json(getCategoriesById);
 };
 
 //GET CATEGORY BY SLUG
-export const getCategoryBySlug = async (req: Request, res: Response) => {
+export const getCategoryBySlug = async (req: Request<{slug:string}>, res: Response) => {
   try {
     const { slug } = req.params;
-    const category = await Category.findOne({
-      where: { slug },
-    });
-
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
+    const category = await getCategoriesBySlugService(slug);
     res.json(category);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
@@ -73,7 +58,7 @@ export const getCategoryBySlug = async (req: Request, res: Response) => {
 
 //Update Category by slug
 
-export const UpdateCategoryBySlug = async(req:Request, res:Response) =>{
+export const UpdateCategoryBySlug = async(req:Request<{slug:string}>, res:Response) =>{
   try{
     const Admin:boolean = true;
     const {slug} = req.params;
@@ -82,24 +67,10 @@ export const UpdateCategoryBySlug = async(req:Request, res:Response) =>{
     if(!Admin){
       res.status(403).json({msg:"user must be Admin to update category"});
     };
-    const searchCategory:any = await Category.findOne({ where: { slug } });
-
-     if(!searchCategory){
-      res.status(404).json({msg:"category not found"});
-    }
-    if(searchCategory){
-       searchCategory.name = name;
-     }else{
-        searchCategory.name;
-     };
-
-    if(name){
-      searchCategory.slug = name.toLowerCase().replace(/\s+/g, "-");
-    };
-    await searchCategory.save();
+    const category = await updateCategoriesByslugService(slug, req.body )
     return res.status(200).json({
       message: "Category updated",
-      data: searchCategory
+      data: category,
     });
     }
     catch (error) {
@@ -111,27 +82,27 @@ export const UpdateCategoryBySlug = async(req:Request, res:Response) =>{
 
 //Delete category by slug
 
-  export const deleteBySlugs = async(req:Request, res:Response) =>{
+  export const deleteBySlugs = async (req:Request<{slug:string}>, res:Response) =>{
 
     try{
-    const Admin:boolean = true;
-    const {slug} = req.params;
+         const Admin:boolean = true;
+          const {slug} = req.params;
 
-    if(!Admin){
-      res.status(403).json({msg:"user must be admin to delete"});
+         if(!Admin){
+            return res.status(403).json({msg:"user must be admin to delete"});
+         }
+         const getCategoryByslug = await getCategoryToDeleteBySlugRepo(slug);
+         const deletedCategory = await deleteCategoryBySlugService(slug);
+         
+        return res.status(200).json({
+        msg:"deleted successfully", 
+        data:getCategoryByslug ,
+        });
     }
-     const deleteBySlug:any = await Category.findOne({where:{slug}});
-
-    if(!deleteBySlug){
-      res.status(404).json({msg:"category not available"});
-    }
-      await deleteBySlug.destroy();
-      return res.status(200).json({msg:"deleted successfully", data:deleteBySlug });
-     }
-     catch (error){
-    return res.status(500).json({ message: "Error deleting category"});
-    };
+     catch (error:any){
+        return res.status(500).json({ message: error.message});
+      };
   };
 
 
-export default {createCategory,getCategories,getCategoryBySlug, UpdateCategoryBySlug, deleteBySlugs, getCategoryByone};
+//export default {createCategory,getCategories,getCategoryBySlug, UpdateCategoryBySlug, deleteBySlugs, getCategoryByone};

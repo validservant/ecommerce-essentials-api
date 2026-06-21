@@ -16,4 +16,5 @@ export const env = {
     DB_PWD:getEnvVariable("DB_PWD"),
     DB_HOST:getEnvVariable("DB_HOST"),
     DB_DIALCT:getEnvVariable("DB_DIALCT"),
+    JWT_SECRET:getEnvVariable("JWT_SECRET"),
 };

@@ -5,34 +5,45 @@ import type{
     CreationOptional } from "sequelize";
     import sequelize from "../config/database.ts";
 
-    export class User extends Model<
-        InferAttributes<User>,
-        InferCreationAttributes<User>
+    export default class Users extends Model<
+        InferAttributes<Users>,
+        InferCreationAttributes<Users>
     >{
         declare id: CreationOptional<number>;
-        declare token: string;
-        declare username: string;
+        declare username:string;
+        declare email: string;
+        declare password: string;
+        declare role:string;
     }
-    User.init({
+    Users.init({
         id: {
             type: DataTypes.INTEGER, 
             autoIncrement: true,
             primaryKey: true,
         },
-        username:{
+        username: {
+            type: DataTypes.STRING,
+            allowNull:false,
+        },
+        email:{
            type: DataTypes.STRING,
             allowNull:false,
             unique: true,
         },
-        token:{
+        password:{
             type:DataTypes.STRING,
             allowNull: false,
             unique: true,
-        },   
+        },
+        role:{
+            type: DataTypes.STRING,
+            allowNull:false,
+            defaultValue:"user",
+        } ,  
       },
       {
             sequelize,
-            tableName:"user",
+            tableName:"Users",
             timestamps: true,
         }, 
     );
